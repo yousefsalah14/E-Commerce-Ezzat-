@@ -24,7 +24,9 @@ app.use((req,res,next)=>{
 app.use('/auth',authRouter)
 app.use('/category',categoryRouter)
 app.use('/product',productRouter)
-
+app.get('/',()=>{
+    res.json({sucess : true ,massage:"Welcome From Server"})
+})
 //page not found handler
 app.all( '*', ( req, res, next ) =>
 {
