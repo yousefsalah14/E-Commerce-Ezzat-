@@ -3,8 +3,9 @@ import { Category } from "../../../DB/models/category.model.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import cloudinary from "../../utils/cloud.js";
 import { Product } from "../../../DB/models/product.model.js";
-
 export const createProduct = asyncHandler(async (req, res, next) => {
+  const startTime = Date.now(); // Log start time
+
   // Verify category
   const category = await Category.findById(req.body.category);
   if (!category) return next(new Error("Category not found", { cause: 404 }));
@@ -29,22 +30,30 @@ export const createProduct = asyncHandler(async (req, res, next) => {
   // Generate folder name for uploads
   const cloudFolder = nanoid();
 
-  // Upload sub-images
-  let images = [];
-  for (const file of req.files.subImages) {
-    const { secure_url, public_id } = await cloudinary.uploader.upload(file.path, {
+  // Upload sub-images in parallel
+  const subImagesUploadStart = Date.now(); // Log sub-image upload start time
+  const subImagesUploads = req.files.subImages.map((file) =>
+    cloudinary.uploader.upload(file.path, {
       folder: `${process.env.CLOUD_FOLDER_NAME}/products/${cloudFolder}`,
-    });
-    images.push({ id: public_id, url: secure_url });
-  }
+    })
+  );
+  const subImagesResults = await Promise.all(subImagesUploads);
+  const images = subImagesResults.map(({ secure_url, public_id }) => ({
+    id: public_id,
+    url: secure_url,
+  }));
+  console.log(`Sub-images upload completed in ${Date.now() - subImagesUploadStart}ms`);
 
   // Upload default image
+  const defaultImageUploadStart = Date.now(); // Log default image upload start time
   const { secure_url, public_id } = await cloudinary.uploader.upload(
     req.files.defaultImage[0].path,
     { folder: `${process.env.CLOUD_FOLDER_NAME}/products/${cloudFolder}` }
   );
+  console.log(`Default image upload completed in ${Date.now() - defaultImageUploadStart}ms`);
 
   // Create product
+  const productCreateStart = Date.now(); // Log product creation start time
   const product = await Product.create({
     ...req.body,
     cloudFolder,
@@ -52,9 +61,12 @@ export const createProduct = asyncHandler(async (req, res, next) => {
     defaultImage: { id: public_id, url: secure_url },
     images,
   });
+  console.log(`Product creation completed in ${Date.now() - productCreateStart}ms`);
 
+  console.log(`Total execution time: ${Date.now() - startTime}ms`);
   return res.json({ success: true, message: "Product created successfully!" });
 });
+
 
 export const updateProduct = asyncHandler(async (req, res, next) => {
   // Find the product in the database
