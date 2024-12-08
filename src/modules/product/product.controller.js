@@ -4,87 +4,38 @@ import { asyncHandler } from "../../utils/asyncHandler.js";
 import cloudinary from "../../utils/cloud.js";
 import { Product } from "../../../DB/models/product.model.js";
 export const createProduct = asyncHandler(async (req, res, next) => {
-  try {
-    const startTime = Date.now(); // Log start time
+  // category
+  const category = await Category.findById(req.body.category);
+  if (!category) return next(new Error("category not found", { cause: 404 }));
 
-    // Verify category
-    const category = await Category.findById(req.body.category);
-    if (!category) {
-      return next(new Error("Category not found", { cause: 404 }));
-    }
-
-    // Validate files
-    if (!req.files || !req.files.defaultImage || !req.files.subImages) {
-      return next(
-        new Error("Product images (defaultImage and subImages) are required!", { cause: 400 })
-      );
-    }
-
-    // Validate defaultImage array
-    if (!Array.isArray(req.files.defaultImage) || req.files.defaultImage.length === 0) {
-      return next(new Error("Default image is missing!", { cause: 400 }));
-    }
-
-    // Validate subImages array
-    if (!Array.isArray(req.files.subImages) || req.files.subImages.length === 0) {
-      return next(new Error("Sub-images are missing!", { cause: 400 }));
-    }
-
-    // Generate unique folder name for cloud uploads
-    const cloudFolder = nanoid();
-
-    // Upload sub-images in parallel
-    const subImagesUploadStart = Date.now();
-    const subImagesUploads = req.files.subImages.map((file) =>
-      cloudinary.uploader.upload(file.path, {
-        folder: `${process.env.CLOUD_FOLDER_NAME}/products/${cloudFolder}`,
-      })
+  //check files
+  if (!req.files)
+    return next(new Error(" product images are required!! ", { cause: 400 }));
+  //check folder name
+  const cloudFolder = nanoid();
+  // upload sub images
+  let images = [];
+  for (const file of req.files.subImages) {
+    const { secure_url, public_id } = await cloudinary.uploader.upload(
+      file.path,
+      { folder: `${process.env.CLOUD_FOLDER_NAME}/products/${cloudFolder}` }
     );
-
-    let subImagesResults;
-    try {
-      subImagesResults = await Promise.all(subImagesUploads);
-    } catch (uploadError) {
-      return next(new Error("Error uploading sub-images.", { cause: 500 }));
-    }
-
-    const images = subImagesResults.map(({ secure_url, public_id }) => ({
-      id: public_id,
-      url: secure_url,
-    }));
-    console.log(`Sub-images upload completed in ${Date.now() - subImagesUploadStart}ms`);
-
-    // Upload default image
-    const defaultImageUploadStart = Date.now();
-    let defaultImageUpload;
-    try {
-      defaultImageUpload = await cloudinary.uploader.upload(req.files.defaultImage[0].path, {
-        folder: `${process.env.CLOUD_FOLDER_NAME}/products/${cloudFolder}`,
-      });
-    } catch (uploadError) {
-      return next(new Error("Error uploading default image.", { cause: 500 }));
-    }
-
-    const { secure_url, public_id } = defaultImageUpload;
-    console.log(`Default image upload completed in ${Date.now() - defaultImageUploadStart}ms`);
-
-    // Create product in the database
-    const productCreateStart = Date.now();
-    const product = await Product.create({
-      ...req.body,
-      cloudFolder,
-      createdBy: req.user._id,
-      defaultImage: { id: public_id, url: secure_url },
-      images,
-    });
-    console.log(`Product creation completed in ${Date.now() - productCreateStart}ms`);
-
-    console.log(`Total execution time: ${Date.now() - startTime}ms`);
-    return res.json({ success: true, message: "Product created successfully!", product });
-  } catch (error) {
-    console.error("Error creating product:", error);
-    next(new Error("An unexpected error occurred.", { cause: 500 }));
+    images.push({ id: public_id, url: secure_url });
   }
+  // upload default image
+  const { secure_url, public_id } = await cloudinary.uploader.upload(
+    req.files.defaultImage[0].path,
+    { folder: `${process.env.CLOUD_FOLDER_NAME}/products/${cloudFolder}` }
+  );
+  // create product
+  const product = await Product.create({
+    ...req.body,
+    cloudFolder,
+    createdBy: req.user._id,
+    defaultImage : {id : public_id , url : secure_url},
+    images,
+  })
+  return res.json({ success: true, message: "product created successfully " });
 });
 
 
