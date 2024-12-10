@@ -129,7 +129,7 @@ export const deleteProduct = asyncHandler(async (req, res, next) => {
 export const allFilterProducts = asyncHandler(async (req, res, next) => {
   let { keyword, sort, page, ...filters } = req.query; // Extract filters dynamically
 
-  // If no query parameters exist
+  // Return an error if no query parameters exist
   if (!keyword && !sort && !page && Object.keys(filters).length === 0) {
     return next(new Error("Products not found", { cause: 404 }));
   }
@@ -138,7 +138,7 @@ export const allFilterProducts = asyncHandler(async (req, res, next) => {
 
   // Search by keyword
   if (keyword) {
-    query.name = { $regex: keyword, $options: "i" };
+    query.name = { $regex: keyword, $options: "i" }; // Case-insensitive search
   }
 
   // Include other filters from `req.query`
@@ -146,11 +146,14 @@ export const allFilterProducts = asyncHandler(async (req, res, next) => {
 
   // Pagination setup
   page = page < 1 || isNaN(page) || !page ? 1 : parseInt(page, 10);
-  const limit = 25; // Set the desired limit per page
+  const limit = 10; // Set the limit to 10 products per page
   const skip = limit * (page - 1);
 
   // Get total count of matching products
   const totalProducts = await Product.countDocuments(query);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalProducts / limit);
 
   // Execute the query with optional sorting, skipping, and limiting
   const products = await Product.find(query).sort(sort).skip(skip).limit(limit);
@@ -160,20 +163,18 @@ export const allFilterProducts = asyncHandler(async (req, res, next) => {
     return next(new Error("Products not found", { cause: 404 }));
   }
 
-  // Calculate total pages
-  const totalPages = Math.ceil(totalProducts / limit);
-
+  // Return the response with pagination metadata
   return res.json({
     success: true,
     meta: {
       pagination: {
-        page,
-        pageSize: products.length,
-        totalPages,
-       totalProducts,
+        page,              // Current page number
+        pageSize: products.length, // Number of products on this page (always <= 10)
+        totalPages,        // Total number of pages
+        totalProducts,     // Total number of matching products
       },
     },
-    data: products,
+    data: products,         // Array of products for this page
   });
 });
 
