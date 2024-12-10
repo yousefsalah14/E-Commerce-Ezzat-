@@ -187,3 +187,8 @@ export const allProducts = asyncHandler(async (req, res, next) => {
       return next(new Error("Products not found", { cause: 404 }))
     return res.json({ success: true, products })
 });
+export const getOneProduct  = asyncHandler(async (req, res, next) => {
+   const {id} = req.params
+   const product = await Product.findById(id)
+   return res.json({ success: true, product});
+});

@@ -37,6 +37,12 @@ router.delete(
     validation(productSchema.deleteProduct),
     productController.deleteProduct
 )
+// getOneProduct
+router.get(
+    "/:id",
+    validation(productSchema.deleteProduct),
+    productController.getOneProduct
+)
 // get products
 router.get("/",productController.allProducts)
 // get with filter

@@ -62,3 +62,8 @@ export const getCategories =asyncHandler(async (req, res, next) => {
     const categories = await Category.find()
     res.json({ success: true, categories });
 });
+export const getOneCategory =asyncHandler(async (req, res, next) => {
+    const {id} =req.params
+       const category = await Category.findById(id)
+    res.json({ success: true, category });
+});
