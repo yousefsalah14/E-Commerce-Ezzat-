@@ -31,7 +31,7 @@ router.delete('/:id',
     categoryController.deleteCategory
 )
 // getOneCategory 
-router.get('/:id',
+router.get('search/:id',
     validation(categorySchema.deleteCategory),
     categoryController.getOneCategory
 )
