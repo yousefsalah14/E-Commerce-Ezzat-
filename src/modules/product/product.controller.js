@@ -189,6 +189,7 @@ export const allProducts = asyncHandler(async (req, res, next) => {
 });
 export const getOneProduct  = asyncHandler(async (req, res, next) => {
    const {id} = req.params
-   const product = await Product.findById(id)
+   const product = await Product.findById(id).populate("category")
+   if(!product)return next(new Error(" Product Nod Found", { cause: 404}));
    return res.json({ success: true, product});
 });

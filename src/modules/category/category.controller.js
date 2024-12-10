@@ -65,5 +65,6 @@ export const getCategories =asyncHandler(async (req, res, next) => {
 export const getOneCategory =asyncHandler(async (req, res, next) => {
     const {id} =req.params
        const category = await Category.findById(id)
+       if(!category)return next(new Error(" Category Nod Found", { cause: 404}));
     res.json({ success: true, category });
 });
