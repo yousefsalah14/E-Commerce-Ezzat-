@@ -182,7 +182,7 @@ export const allFilterProducts = asyncHandler(async (req, res, next) => {
 
 export const allProducts = asyncHandler(async (req, res, next) => {
   // Apply filters if any
-    const products = await Product.find();
+    const products = await Product.find().populate("category");
     if (products.length === 0)
       return next(new Error("Products not found", { cause: 404 }))
     return res.json({ success: true, products })
