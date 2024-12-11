@@ -156,7 +156,7 @@ export const allFilterProducts = asyncHandler(async (req, res, next) => {
   const totalPages = Math.ceil(totalProducts / limit);
 
   // Execute the query with optional sorting, skipping, and limiting
-  const products = await Product.find(query).sort(sort).skip(skip).limit(limit);
+  const products = await Product.find(query).sort(sort).skip(skip).limit(limit).populate("category");
 
   // If no products are found
   if (products.length === 0) {
