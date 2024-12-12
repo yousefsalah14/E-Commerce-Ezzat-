@@ -36,13 +36,11 @@ export const updateCategory = asyncHandler(async (req, res, next) => {
             {public_id:category.image.id}
         )
         category.image = {id :public_id , url : secure_url }
-        category.name = req.body.name ? req.body.name : category.name
-        category.slug = req.body.name ? slugify(req.body.name) : category.slug
-    // Save the updated category
-    await category.save();
-    // Send response
-    return res.json({ success: true, message: "Category updated successfully ✅" });
     }
+    category.name = req.body.name ? req.body.name : category.name
+    category.slug = req.body.name ? slugify(req.body.name) : category.slug
+await category.save()
+return res.json({ success: true, message: "Category updated successfully ✅" });
 });
 export const deleteCategory = asyncHandler(async (req, res, next) => {
     // check category in db and delete it
