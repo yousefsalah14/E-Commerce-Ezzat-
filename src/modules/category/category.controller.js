@@ -66,3 +66,18 @@ export const getOneCategory =asyncHandler(async (req, res, next) => {
        if(!category)return next(new Error(" Category Nod Found", { cause: 404}));
     res.json({ success: true, category });
 });
+
+export const categoryFilter = asyncHandler(async (req, res, next) => {
+  let { keyword,...filters } = req.query; // Extract filters dynamically
+
+  let query = {}; // Build the query object dynamically
+  // Search by keyword
+  if (keyword) {
+    query.name = { $regex: keyword, $options: "i" }; // Case-insensitive search
+  }
+  query = { ...query, ...filters };
+  // Execute the query with optional sorting, skipping, and limiting
+  const category = await Category.find(query)
+
+return res.json({ success: true, category });
+})

@@ -30,6 +30,11 @@ router.delete('/:id',
     validation(categorySchema.deleteCategory),
     categoryController.deleteCategory
 )
+// get filter 
+router.get('/filter',
+    categoryController.categoryFilter
+)
+
 // getOneCategory 
 router.get('/:id',
     categoryController.getOneCategory
